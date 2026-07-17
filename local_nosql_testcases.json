@@ -1,0 +1,80 @@
+{
+  "sel_device_safety_rules": {
+    "selection_id": "sel_device_safety_rules",
+    "target_nodes": [
+      "node_1_1_intended_use_ab350397",
+      "node_1_2_indications_and_contraindications_ac8b0817"
+    ],
+    "test_cases": [
+      {
+        "id": "TC-001",
+        "scenario": "Valid arm circumference measurement",
+        "preconditions": [
+          "The CT-200 device is properly calibrated",
+          "The user has an arm circumference between 22-42 cm"
+        ],
+        "steps": [
+          "Measure the user's arm circumference",
+          "Enter the measurement into the CT-200 device",
+          "Take a blood pressure and pulse rate reading"
+        ],
+        "expected_result": "The device provides a valid blood pressure and pulse rate reading"
+      },
+      {
+        "id": "TC-002",
+        "scenario": "Invalid arm circumference measurement",
+        "preconditions": [
+          "The CT-200 device is properly calibrated",
+          "The user has an arm circumference outside the range of 22-42 cm"
+        ],
+        "steps": [
+          "Measure the user's arm circumference",
+          "Enter the measurement into the CT-200 device",
+          "Attempt to take a blood pressure and pulse rate reading"
+        ],
+        "expected_result": "The device displays an error message or does not provide a reading"
+      },
+      {
+        "id": "TC-003",
+        "scenario": "Contraindicated use - mastectomy",
+        "preconditions": [
+          "The CT-200 device is properly calibrated",
+          "The user has had a mastectomy on one arm"
+        ],
+        "steps": [
+          "Attempt to take a blood pressure and pulse rate reading on the arm ipsilateral to the mastectomy",
+          "Observe the device's response"
+        ],
+        "expected_result": "The device displays a warning or error message indicating that the measurement may be unreliable"
+      },
+      {
+        "id": "TC-004",
+        "scenario": "Contraindicated use - severe arrhythmia",
+        "preconditions": [
+          "The CT-200 device is properly calibrated",
+          "The user has severe arrhythmia"
+        ],
+        "steps": [
+          "Attempt to take a blood pressure and pulse rate reading without clinician guidance",
+          "Observe the device's response"
+        ],
+        "expected_result": "The device displays a warning or error message indicating that the measurement may be unreliable without clinician guidance"
+      },
+      {
+        "id": "TC-005",
+        "scenario": "Valid use with clinician guidance - severe arrhythmia",
+        "preconditions": [
+          "The CT-200 device is properly calibrated",
+          "The user has severe arrhythmia",
+          "A qualified clinician is present to interpret the results"
+        ],
+        "steps": [
+          "Take a blood pressure and pulse rate reading with clinician guidance",
+          "Observe the device's response"
+        ],
+        "expected_result": "The device provides a valid blood pressure and pulse rate reading, and the clinician can interpret the results"
+      }
+    ],
+    "generated_at": "2026-07-17 07:05:30.935910"
+  }
+}
