@@ -94,12 +94,3 @@ Issue a GET request targeting /api/selections/sel_blood_pressure_rules/testcases
 The retrieval system will cross-reference the hash signatures snapshot on your version 1 selection bounds against the incoming updates from version 2. It will output a live staleness_impact_report identifying exactly which test suites require revision because the primary source parameters mutated inside the new manual version.
 
 
----
-
-### 2. Commit the README to Git
-Run these final commands in your terminal to sync the documentation online:
-
-```powershell
-git add README.md
-git commit -m "docs: write complete installation runbook and end-to-end integration manual"
-git push origin main
