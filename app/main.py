@@ -2,6 +2,7 @@ import uuid
 from typing import List, Optional
 from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+import app.services as services
 
 import app.models as models
 import app.schemas as schemas
@@ -125,3 +126,71 @@ def run_manual_ingestion_pipeline(
         return {"status": "success", "pipeline_report": processing_summary}
     except Exception as error_logs:
         raise HTTPException(status_code=500, detail=f"Pipeline execution failure: {str(error_logs)}")
+    
+# --- 4. LLM Generation and Retrieval Routing Hub ---
+
+@app.post("/api/selections/{selection_id}/generate")
+def generate_selection_test_cases(selection_id: str, db: Session = Depends(get_db)):
+    """Reconstructs pinned source text contexts and routes through the self-correcting LLM loop[cite: 3]."""
+    selection = db.query(models.Selection).filter(models.Selection.id == selection_id).first()
+    if not selection:
+        raise HTTPException(status_code=404, detail="Requested Selection reference snapshot missing[cite: 3].")
+        
+    # Reconstruct exact source text blocks from the version-pinned nodes cleanly[cite: 3]
+    reconstructed_text_blocks = []
+    node_ids = []
+    for node in selection.nodes:
+        reconstructed_text_blocks.append(f"Heading: {node.heading}\nText: {node.body_text}")
+        node_ids.append(node.id)
+        
+    combined_document_context = "\n\n---\n\n".join(reconstructed_text_blocks)
+    
+    try:
+        # Route through the self-correcting structural service[cite: 3]
+        generation_result = services.generate_validated_test_cases(
+            db=db,
+            selection_id=selection_id,
+            reconstructed_text=combined_document_context,
+            target_node_ids=node_ids
+        )
+        return {"status": "success", "data": generation_result}
+    except ValueError as val_error:
+        raise HTTPException(status_code=422, detail=str(val_error))
+
+@app.get("/api/selections/{selection_id}/testcases")
+def retrieve_and_evaluate_testcases(selection_id: str, db: Session = Depends(get_db)):
+    """Fetches text validation packages and evaluates live version staleness impact parameters[cite: 3]."""
+    selection = db.query(models.Selection).filter(models.Selection.id == selection_id).first()
+    if not selection:
+        raise HTTPException(status_code=404, detail="Target Selection reference footprint missing[cite: 3].")
+        
+    # Read core structural values from your NoSQL data snapshot[cite: 3]
+    raw_testcases = services.fetch_from_nosql_datastore(selection_id)
+    if not raw_testcases:
+        raise HTTPException(status_code=404, detail="No AI test-cases have been initialized for this selection model[cite: 3].")
+        
+    # Evaluate live staleness detection parameters against the newest manual updates[cite: 3]
+    impact_matrix = {}
+    for node in selection.nodes:
+        latest_version_node = db.query(models.DocumentNode).filter(
+            models.DocumentNode.id == node.id
+        ).order_by(models.DocumentNode.version.desc()).first()
+        
+        if not latest_version_node:
+            impact_matrix[node.id] = {"status": "orphaned / deleted", "is_stale": True}
+        else:
+            # Check if current hash deviates from hash signature pinned during selection snapshot[cite: 3]
+            is_stale = latest_version_node.content_hash != node.content_hash
+            impact_matrix[node.id] = {
+                "is_stale": is_stale,
+                "pinned_version_used": node.version,
+                "newest_active_version": latest_version_node.version,
+                "mutation_diff_detected": is_stale
+            }
+            
+    return {
+        "selection_id": selection_id,
+        "selection_name": selection.name,
+        "staleness_impact_report": impact_matrix, # Fulfills explicit query tracking rules[cite: 3]
+        "generated_output": raw_testcases
+    }
